@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../core/Layout";
 import { isAuthenticated } from "../auth";
-import { createCategory } from "./apiAdmin";
+import { createProduct, getCategories } from "./apiAdmin";
 
 const AddProduct = () => {
-  const { user, token } = isAuthenticated();
   const [values, setValues] = useState({
     name: "",
     description: "",
@@ -22,6 +21,8 @@ const AddProduct = () => {
     formData: ""
   });
 
+  const { user, token } = isAuthenticated();
+
   const {
     name,
     description,
@@ -37,8 +38,19 @@ const AddProduct = () => {
     formData // this is the from data send to srv to create new product
   } = values;
 
+  // load categories and set form data
+  const init = () => {
+    getCategories().then(data => {
+      if (data.error) {
+        setValues({ ...values, error: data.error });
+      } else {
+        setValues({ ...values, categories: data, formData: new FormData() });
+      }
+    });
+  };
+
   useEffect(() => {
-    setValues({ ...values, formData: new FormData() });
+    init();
   }, []);
 
   const handleChange = name => event => {
@@ -49,6 +61,28 @@ const AddProduct = () => {
 
   const clickSubmit = event => {
     event.preventDefault();
+    setValues({ ...values, error: "", loading: true });
+    createProduct(user._id, token, formData).then(data => {
+      if (data.error) {
+        setValues({ ...values, error: data.error, createdProduct: "" });
+      } else {
+        document.getElementById("photo-file").value = "";
+        document.getElementById("select-shipping").selectedIndex = 0;
+        document.getElementById("select-category").selectedIndex = 0;
+        setValues({
+          ...values,
+          name: "",
+          description: "",
+          photo: "",
+          price: "",
+          quantity: "",
+          loading: false,
+          createdProduct: data.name,
+          formData: new FormData(),
+          error: ""
+        });
+      }
+    });
   };
 
   const newPostForm = () => {
@@ -58,6 +92,7 @@ const AddProduct = () => {
         <div className="form-group">
           <label className="btn btn-secondary">
             <input
+              id="photo-file"
               onChange={handleChange("photo")}
               type="file"
               name="photo"
@@ -97,8 +132,20 @@ const AddProduct = () => {
 
         <div className="form-group">
           <label className="text-muted">Category</label>
-          <select onChange={handleChange("category")} className="form-control">
-            <option value="5e0a203220b6f66a747b0144">Node</option>
+          <select
+            id="select-category"
+            onChange={handleChange("category")}
+            className="form-control"
+          >
+            <option>Please select</option>
+            {categories &&
+              categories.map((c, i) => {
+                return (
+                  <option key={i} value={c._id}>
+                    {c.name}
+                  </option>
+                );
+              })}
           </select>
         </div>
 
@@ -114,7 +161,12 @@ const AddProduct = () => {
 
         <div className="form-group">
           <label className="text-muted">Shipping</label>
-          <select onChange={handleChange("shipping")} className="form-control">
+          <select
+            id="select-shipping"
+            onChange={handleChange("shipping")}
+            className="form-control"
+          >
+            <option>Please select</option>
             <option value="0">No</option>
             <option value="1">Yes</option>
           </select>
@@ -125,13 +177,44 @@ const AddProduct = () => {
     );
   };
 
+  const showError = () => (
+    <div
+      className="alert alert-danger"
+      style={{ display: error ? "" : "none" }}
+    >
+      {error}
+    </div>
+  );
+
+  const showSuccess = () => (
+    <div
+      className="alert alert-info"
+      style={{ display: createdProduct ? "" : "none" }}
+    >
+      <h2>{createdProduct} is created!</h2>
+    </div>
+  );
+
+  const showLoading = () =>
+    loading && (
+      <div className="alert alert-success">
+        <h2>loading ...</h2>
+      </div>
+    );
+
   return (
     <Layout
       title="Add a new Product"
       description={`Good day ${user.name}, ready to add a new product`}
     >
       <div className="row">
-        <div className="col-md-8 offset-md-2">{newPostForm()}</div>
+        <div className="col-md-8 offset-md-2">
+          {showLoading()}
+          {showSuccess()}
+          {showError()}
+          {newPostForm()}
+        </div>
+        {JSON.stringify(values)}
       </div>
     </Layout>
   );
