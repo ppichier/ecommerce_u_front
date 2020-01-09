@@ -9,23 +9,27 @@ const Home = () => {
   const [error, setError] = useState(false);
 
   const loadProductsBySell = () => {
-    getProducts("sold").then(data => {
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setProductsBySell(data);
-      }
-    });
+    getProducts("sold")
+      .then(data => {
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setProductsBySell(data);
+        }
+      })
+      .catch(err => console.log(err));
   };
 
   const loadProductsByArrival = () => {
-    getProducts("createdAt").then(data => {
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setProductsByArrival(data);
-      }
-    });
+    getProducts("createdAt")
+      .then(data => {
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setProductsByArrival(data);
+        }
+      })
+      .catch(err => console.log(err));
   };
 
   useEffect(() => {
