@@ -12,9 +12,9 @@ const Home = () => {
   const loadProductsBySell = () => {
     getProducts("sold")
       .then(data => {
-        if (data.error) {
+        if (data && data.error) {
           setError(data.error);
-        } else {
+        } else if (data) {
           setProductsBySell(data);
         }
       })
@@ -24,9 +24,9 @@ const Home = () => {
   const loadProductsByArrival = () => {
     getProducts("createdAt")
       .then(data => {
-        if (data.error) {
+        if (data && data.error) {
           setError(data.error);
-        } else {
+        } else if (data) {
           setProductsByArrival(data);
         }
       })
